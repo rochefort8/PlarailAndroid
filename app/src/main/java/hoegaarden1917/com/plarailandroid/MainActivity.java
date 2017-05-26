@@ -1,6 +1,8 @@
 package hoegaarden1917.com.plarailandroid;
 
 import android.content.Intent;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -19,6 +21,7 @@ public class MainActivity extends AppCompatActivity {
     private SwipeRefreshLayout.OnRefreshListener mOnRefreshListener ;
 
     private BleCentral mBleCentral ;
+    private Handler mHandler  ;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,10 +47,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onRefresh() {
 
-                PlarailObject object = new PlarailObject() ;
-                object.name = "NaokyAndHiroky" ;
-                mListAdapter.add(object) ;
-                mListAdapter.notifyDataSetChanged();
                 mSwipeRefreshLayout.setRefreshing(false);
             }
         };
@@ -56,7 +55,22 @@ public class MainActivity extends AppCompatActivity {
         mSwipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swipe_refresh);
         mSwipeRefreshLayout.setOnRefreshListener(mOnRefreshListener);
 
-           mBleCentral = new BleCentral(this) ;
+        mHandler =new Handler() {
+            public void handleMessage(Message msg) {
+                if (msg.what == 1) {
+                    Log.d("message","1");
+                    PlarailObject object = new PlarailObject() ;
+                    object.name = "NaokyAndHiroky" ;
+                    mListAdapter.add(object) ;
+                    mListAdapter.notifyDataSetChanged();
+                } else {
+                    Log.d("message","0");
+                    mListAdapter.clear();
+                }
+            }
+        };
+
+           mBleCentral = new BleCentral(this,mHandler) ;
     }
 
 }
