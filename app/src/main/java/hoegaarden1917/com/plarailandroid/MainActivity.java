@@ -10,6 +10,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ListView;
 
 public class MainActivity extends AppCompatActivity {
@@ -22,6 +23,7 @@ public class MainActivity extends AppCompatActivity {
 
     private BleCentral mBleCentral ;
     private Handler mHandler  ;
+    private Button button0 ;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,18 +32,19 @@ public class MainActivity extends AppCompatActivity {
 
         // Initialize listview and adapter
         mListAdapter  = new PlarailListAdapter(this) ;
+
         mListView = (ListView) findViewById(R.id.plarail_listView);
+        mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            public void onItemClick(AdapterView<?> parent, View view,
+                                    int position, long id) {
+                mBleCentral.toggleSwitch();
+            }
+        });
+
+
         mListView.setAdapter(mListAdapter);
         mListAdapter.notifyDataSetChanged();
 
-        mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view,
-                                    int position, long id) {
-                //
-            }
-        });
 
         mOnRefreshListener  = new SwipeRefreshLayout.OnRefreshListener() {
             @Override

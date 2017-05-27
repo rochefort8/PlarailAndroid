@@ -19,6 +19,8 @@ import android.content.Intent;
 import android.graphics.BlurMaskFilter;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.View;
@@ -46,20 +48,31 @@ public class BleCentral  implements IBleActivity{
 
     private TextView receivedValueView;
     private TextView sendValueView;
+    private boolean mSwitchStatus = false ;
 
     // 乱数送信用.
     private Random random = new Random();
     private Timer timer;
     private Context mContext ;
+    private Handler mHandler ;
+
+    public void toggleSwitch() {
+        if ((bleGatt != null) && (bleCharacteristic != null)) {
+            byte[] bytes = {mSwitchStatus == false ? (byte) 0x01 : (byte) 0x00};
+            bleCharacteristic.setValue(bytes);
+            bleGatt.writeCharacteristic(bleCharacteristic);
+            mSwitchStatus = !mSwitchStatus ;
+        }
+    }
 
     public void onGpsIsEnabled(){
         // 2016.03.07現在GPSを要求するのが6.0以降のみなのでOnになったら新しいAPIでScan開始.
         this.startScanByBleScanner();
     }
 
-    public BleCentral(Context context) {
+    public BleCentral(Context context,Handler handler) {
         mContext = context ;
-
+        mHandler = handler ;
 
         isBleEnabled = false;
 
@@ -91,6 +104,9 @@ public class BleCentral  implements IBleActivity{
                 if (bleGatt != null){
                     bleGatt.close();
                     bleGatt = null;
+                    Message msg = Message.obtain(mHandler, 0, "disconnected");
+                    mHandler.sendMessage(msg);
+
                 }
                 isBleEnabled = false;
             }
@@ -115,12 +131,20 @@ public class BleCentral  implements IBleActivity{
                     bleCharacteristic = bleService.getCharacteristic(UUID.fromString(mContext.getString(R.string.uuid_characteristic)));
                     if (bleCharacteristic != null) {
                         bleGatt = gatt;
+/*
+                        byte[] bytes = { mSwitchStatus==false? (byte)0x01:(byte)0x00} ;
+                        bleCharacteristic.setValue(bytes) ;
+                        bleGatt.writeCharacteristic(bleCharacteristic) ;
+*/
+                        Message msg = Message.obtain(mHandler, 1, "connected");
+                        mHandler.sendMessage(msg);
 
                         isBleEnabled = true;
                     }
                 }
             }
         }
+
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic){
             // キャラクタリスティックのUUIDをチェック(getUuidの結果が全て小文字で帰ってくるのでUpperCaseに変換)
