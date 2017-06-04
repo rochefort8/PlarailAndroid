@@ -43,27 +43,73 @@ public class BleCentral  implements IBleActivity{
     private BluetoothAdapter bleAdapter;
     private boolean isBleEnabled = false;
     private BluetoothLeScanner bleScanner;
-    private BluetoothGatt bleGatt;
-    private BluetoothGattCharacteristic bleCharacteristic;
 
-    private TextView receivedValueView;
-    private TextView sendValueView;
     private boolean mSwitchStatus = false ;
 
     // 乱数送信用.
     private Random random = new Random();
-    private Timer timer;
     private Context mContext ;
     private Handler mHandler ;
 
-    public void toggleSwitch() {
-        if ((bleGatt != null) && (bleCharacteristic != null)) {
-            byte[] bytes = {mSwitchStatus == false ? (byte) 0x01 : (byte) 0x00};
-            bleCharacteristic.setValue(bytes);
-            bleGatt.writeCharacteristic(bleCharacteristic);
-            mSwitchStatus = !mSwitchStatus ;
+    public void toggleSwitch(BluetoothGatt gatt) {
+
+        BluetoothGattService bleService = gatt.getService(UUID.fromString(mContext.getString(R.string.uuid_service)));
+        if (bleService == null){
+            Log.d("Error","bleService=null") ;
+            return ;
         }
+        BluetoothGattCharacteristic bleCharacteristic =
+                bleService.getCharacteristic(UUID.fromString(mContext.getString(R.string.uuid_write_characteristic)));
+        if (bleCharacteristic == null){
+            Log.d("Error","bleCharacteristic=null") ;
+            return ;
+        }
+        byte[] bytes = {mSwitchStatus == false ? (byte) 0x01 : (byte) 0x00};
+        bleCharacteristic.setValue(bytes);
+        gatt.writeCharacteristic(bleCharacteristic);
+        mSwitchStatus = !mSwitchStatus ;
     }
+
+    public void writeCharacteristic(BluetoothGatt gatt, byte[] bytes) {
+        BluetoothGattService bleService = gatt.getService(UUID.fromString(mContext.getString(R.string.uuid_service)));
+        if (bleService == null){
+            Log.d("Error","bleService=null") ;
+            return ;
+        }
+        BluetoothGattCharacteristic bleCharacteristic =
+                bleService.getCharacteristic(UUID.fromString(mContext.getString(R.string.uuid_write_characteristic)));
+        if (bleCharacteristic == null){
+            Log.d("Error","bleCharacteristic=null") ;
+            return ;
+        }
+        bleCharacteristic.setValue(bytes);
+        gatt.writeCharacteristic(bleCharacteristic);
+    }
+
+    public void readCharacteristic(BluetoothGatt gatt) {
+
+        BluetoothGattService bleService = gatt.getService(UUID.fromString(mContext.getString(R.string.uuid_service)));
+        if (bleService == null){
+            Log.d("Error","bleService=null") ;
+            return ;
+        }
+        BluetoothGattCharacteristic bleCharacteristic =
+                bleService.getCharacteristic(UUID.fromString(mContext.getString(R.string.uuid_read_characteristic)));
+        if (bleCharacteristic == null){
+            Log.d("Error","bleCharacteristic=null") ;
+            return ;
+        }
+        gatt.readCharacteristic(bleCharacteristic) ;
+
+        byte b[] = bleCharacteristic.getValue() ;
+        if (b != null) {
+            String s = new String(b);
+            Log.d("d:", s);
+        }
+
+        mSwitchStatus = !mSwitchStatus ;
+    }
+
 
     public void onGpsIsEnabled(){
         // 2016.03.07現在GPSを要求するのが6.0以降のみなのでOnになったら新しいAPIでScan開始.
@@ -79,9 +125,6 @@ public class BleCentral  implements IBleActivity{
         // Bluetoothの使用準備.
         bleManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
         bleAdapter = bleManager.getAdapter();
-
-        // Writeリクエスト用のタイマーをセット.
-        timer = new Timer();
 
         if ((bleAdapter == null)
                 || (! bleAdapter.isEnabled())) {
@@ -101,13 +144,8 @@ public class BleCentral  implements IBleActivity{
                 gatt.discoverServices();
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 Log.d("onConnectionState","Disonnected") ;
-                if (bleGatt != null){
-                    bleGatt.close();
-                    bleGatt = null;
-                    Message msg = Message.obtain(mHandler, 0, "disconnected");
-                    mHandler.sendMessage(msg);
-
-                }
+                Message msg = Message.obtain(mHandler, 0, gatt);
+                mHandler.sendMessage(msg);
                 isBleEnabled = false;
             }
         }
@@ -115,7 +153,6 @@ public class BleCentral  implements IBleActivity{
         public void onServicesDiscovered(BluetoothGatt gatt, int status){
             // Serviceが見つかったら実行.
             if (status == BluetoothGatt.GATT_SUCCESS) {
-
 
                 List<BluetoothGattService> service = gatt.getServices();
 
@@ -128,17 +165,17 @@ public class BleCentral  implements IBleActivity{
                 BluetoothGattService bleService = gatt.getService(UUID.fromString(mContext.getString(R.string.uuid_service)));
                 if (bleService != null){
 
-                    bleCharacteristic = bleService.getCharacteristic(UUID.fromString(mContext.getString(R.string.uuid_characteristic)));
+                    BluetoothGattCharacteristic bleCharacteristic =
+                            bleService.getCharacteristic(UUID.fromString(mContext.getString(R.string.uuid_write_characteristic)));
                     if (bleCharacteristic != null) {
-                        bleGatt = gatt;
-/*
-                        byte[] bytes = { mSwitchStatus==false? (byte)0x01:(byte)0x00} ;
-                        bleCharacteristic.setValue(bytes) ;
-                        bleGatt.writeCharacteristic(bleCharacteristic) ;
-*/
-                        Message msg = Message.obtain(mHandler, 1, "connected");
-                        mHandler.sendMessage(msg);
 
+                        BluetoothDevice device = gatt.getDevice() ;
+                        String name = device.getName() ;
+                        String address = device.getAddress() ;
+                        Log.d("Service discovererd.",name + "/" + address);
+
+                        Message msg = Message.obtain(mHandler, 1, gatt);
+                        mHandler.sendMessage(msg);
                         isBleEnabled = true;
                     }
                 }
@@ -196,6 +233,10 @@ public class BleCentral  implements IBleActivity{
 
                 BluetoothDevice device = result.getDevice() ;
                 String name = device.getName() ;
+                String address = device.getAddress() ;
+
+                Log.d("BLE device",name + "/" + address);
+
                 if (name != null) {
                     Log.d("BBB", name);
                     if (name.equals("NaokyAndHiroky")) {

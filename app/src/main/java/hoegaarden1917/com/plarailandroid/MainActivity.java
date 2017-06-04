@@ -1,5 +1,6 @@
 package hoegaarden1917.com.plarailandroid;
 
+import android.bluetooth.BluetoothGatt;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.os.Handler;
@@ -43,7 +44,12 @@ public class MainActivity extends AppCompatActivity {
         mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View view,
                                     int position, long id) {
-                mBleCentral.toggleSwitch();
+
+                PlarailObject object = (PlarailObject)parent.getItemAtPosition(position) ;
+                BluetoothGatt gatt = object.getGatt() ;
+                Log.d("PLA","Pos "+ Integer.toString(position) + "/" + gatt.getDevice().getAddress()) ;
+
+                object.toggleSwitch();
             }
         });
 
@@ -67,8 +73,7 @@ public class MainActivity extends AppCompatActivity {
         mHandler =new Handler() {
             public void handleMessage(Message msg) {
                 if (msg.what == 1) {
-                    Log.d("message","1");
-                    PlarailObject object = new PlarailObject() ;
+                    PlarailObject object = new PlarailObject(mBleCentral,(BluetoothGatt)msg.obj) ;
                     object.name = "NaokyAndHiroky" ;
                     mListAdapter.add(object) ;
                     mListAdapter.notifyDataSetChanged();

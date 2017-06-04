@@ -4,10 +4,12 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -31,15 +33,18 @@ public class PlarailListAdapter extends ArrayAdapter<PlarailObject> {
 
         PlarailObject object = getItem(position) ;
 
+        Button button = (Button)view.findViewById(R.id.button_start_service);
+        button.setOnClickListener((View v) -> {
+            object.getUniqueName() ;
+        });
+
+        Button button0 = (Button)view.findViewById(R.id.button_set_name);
+        button0.setOnClickListener((View v) -> {
+            Log.d("AAA",object.getGatt().getDevice().getAddress()) ;
+            object.setUniqueName("OGIHARA");
+        });
 
         TextView txtTitle   = (TextView) view.findViewById(R.id.news_title);
-//        TextView txtArticle = (TextView) view.findViewById(R.id.news_article);
-
-//        ImageView imageView = (ImageView) view.findViewById(R.id.news_image);
-
-//        txtTitle.setText(mNewsContents.getTitle(position));
-//       txtArticle.setText(mNewsContents.getArticle(position));
-//        Bitmap bitmap = BitmapFactory.decodeFile(getContext().getFilesDir() + "/" + mNewsContents.getImagePath(position));
 
         txtTitle.setText(object.name);
         return view ;
