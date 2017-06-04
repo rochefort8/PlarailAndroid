@@ -41,7 +41,7 @@ public class PlarailListAdapter extends ArrayAdapter<PlarailObject> {
         Button button0 = (Button)view.findViewById(R.id.button_set_name);
         button0.setOnClickListener((View v) -> {
             Log.d("AAA",object.getGatt().getDevice().getAddress()) ;
-            object.setUniqueName("OGIHARA");
+            object.setUniqueName("新幹線");
         });
 
         TextView txtTitle   = (TextView) view.findViewById(R.id.news_title);

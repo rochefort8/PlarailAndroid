@@ -57,7 +57,6 @@ public class MainActivity extends AppCompatActivity {
         mListView.setAdapter(mListAdapter);
         mListAdapter.notifyDataSetChanged();
 
-
         mOnRefreshListener  = new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
@@ -121,14 +120,42 @@ public class MainActivity extends AppCompatActivity {
             ArrayList<String> results = data.getStringArrayListExtra(
                     RecognizerIntent.EXTRA_RESULTS);
 
+            String departure = "出発" ;
+            String stop = "停止" ;
+            int operation = 0 ;
+
             for (int i = 0; i< results.size(); i++) {
-                // ここでは、文字列が複数あった場合に結合しています
-                resultsString += results.get(i);
-                resultsString += "¥n" ;
+                String s = results.get(i) ;
+
+                if (s.indexOf(departure) != -1) {
+                    operation = 1 ;
+                    break ;
+                }
+                if (s.indexOf(stop) != -1) {
+                    operation = 2 ;
+                    break ;
+                }
+            }
+            String sss = "Nothing" ;
+            PlarailObject object = mListAdapter.getItem(0) ;
+
+            if (operation != 0) {
+                switch (operation) {
+                    case 1 :
+                        object.willStart();
+                        sss = departure ;
+                        break ;
+                    case 2 :
+                        object.willStop();
+                        sss = stop ;
+                        break ;
+                    default:
+                        break ;
+                }
             }
 
             // トーストを使って結果を表示
-            Toast.makeText(this, resultsString, Toast.LENGTH_LONG).show();
+            Toast.makeText(this, sss, Toast.LENGTH_LONG).show();
         }
 
         super.onActivityResult(requestCode, resultCode, data);

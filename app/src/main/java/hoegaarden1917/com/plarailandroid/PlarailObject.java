@@ -30,6 +30,20 @@ public class PlarailObject extends Object {
         mBleCentral.readCharacteristic(mGatt);
         return null ;
     }
+    public void willStart() {
+        byte[] bytes = new byte[1] ;
+        bytes[0] = 0x01 ;
+        mBleCentral.writeCharacteristic(mGatt,bytes);
+        mSwitch = true ;
+    }
+
+    public void willStop() {
+        byte[] bytes = new byte[1] ;
+        bytes[0] = 0x00 ;
+        mBleCentral.writeCharacteristic(mGatt,bytes);
+        mSwitch = false ;
+    }
+
     public void setUniqueName(String name) {
         byte[] bytes = new byte[1] ;
         bytes[0] = 0x02 ;
